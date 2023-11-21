@@ -4,7 +4,7 @@ import time
 import datetime
 import sys
 
-ip = raw_input("Please enter your IP address: ")
+ip = input("Please enter your IP address: ")
 username = "cisco"
 password = "cisco"
 

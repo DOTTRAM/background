@@ -5,8 +5,8 @@ import datetime
 import sys
 
 ip = raw_input("Please enter your IP address: ")
-username = "admin"
-password = "pwd12pwd"
+username = "cisco"
+password = "cisco"
 
 f = open('NewdayTest.txt', 'a')
 old_stdout = sys.stdout

@@ -1,0 +1,22 @@
+---
+# tasks file for donfilemon.grafana
+- name: download Graphana deb file
+  get_url:
+    url: "https://s3-us-west-2.amazonaws.com/grafana-releases/release/grafana_{{ graphana_version }}_amd64.deb "
+    dest: /tmp/grafana_{{ graphana_version }}_amd64.deb
+    
+- name: Install a list of packages
+  apt:
+    name: "{{ packages }}"
+    update_cache: yes
+  vars:
+    packages:
+    - adduser
+    - libfontconfig
+- name: Install a graphana.deb package
+  apt:
+    deb: /tmp/grafana_{{ graphana_version }}_amd64.deb
+- name: just force systemd to reread configs (only ansible 2.4 and above)
+  systemd: daemon_reload=yes
+- name: stop service cron on debian, if running
+  systemd: name=grafana-server state=started

@@ -1,0 +1,4 @@
+- name: Applying prometheus role
+  hosts: ubuntu2
+  roles:
+    - filex5.donfilemon_grafana

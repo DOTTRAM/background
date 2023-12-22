@@ -1,0 +1,4 @@
+- name: Applying prometheus role
+  hosts: ubuntu1
+  roles:
+    - andrelohmann.prometheus

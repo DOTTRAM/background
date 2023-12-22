@@ -1,0 +1,12 @@
+- hosts: ubuntu1
+  tasks:
+
+
+    - name: Installs apache web server
+      apt: pkg=apache2 state=latest update_cache=true
+
+    - name: Installs php5 module
+      apt: pkg=libapache2-mod-php5 state=latest
+
+    - name: Installs git
+      apt: pkg=git state=latest

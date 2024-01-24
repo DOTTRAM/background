@@ -1,0 +1,138 @@
+---
+- hosts: db_master
+  become: yes
+
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        upgrade: yes
+        update_cache: yes
+        cache_valid_time: 86400
+
+    - name: "Install packages"
+      ansible.builtin.apt:
+        pkg:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - freetds-common
+        - freetds-dev
+        - g++
+        - gcc
+        - git
+        - gnupg
+        - gnupg2
+        - gpg
+        - libcurl4-openssl-dev
+        - libsybdb5
+        - lsb-release
+        - make
+        - software-properties-common
+        - vim
+
+
+    - name: Add an Apt signing key to a specific keyring file
+      ansible.builtin.apt_key:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        keyring:  /etc/apt/trusted.gpg.d/postgresql.gpg
+
+    - name: Add specified repository into sources list using specified filename
+      ansible.builtin.apt_repository:
+        repo: deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main
+        state: present
+        filename: pgdg
+
+
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        cache_valid_time: 86400
+
+
+    - name: "Install packages"
+      ansible.builtin.apt:
+        pkg:
+        - postgresql-14
+        - postgresql-server-dev-14
+        - postgresql-client-14
+        - postgresql-14-rum
+
+    - name: Create a directory if it does not exist
+      ansible.builtin.file:
+        path: /pgdata
+        state: directory
+
+
+    - name: Change file ownership, group and permissions
+      ansible.builtin.file:
+        path: /pgdata
+        owner: postgres
+        group: postgres
+        mode: '7777'
+
+    - name: Stop service Postgresql, if started
+      ansible.builtin.service:
+        name: postgresql
+        state: stopped
+
+    - name: "Find out if PostgreSQL is initialized"
+      ansible.builtin.stat:
+        path: "/etc/postgresql/14/main/postgresql.conf"
+      register: postgres_data
+
+    - name: "Uncomment the line /etc/postgresql/14/main/postgresql.conf"
+      replace:
+        path: "/etc/postgresql/14/main/postgresql.conf"
+        regexp: "#listen_addresses = 'localhost'"
+        replace: "listen_addresses = '*'"
+      notify: restart postgres
+
+    - name: "Allow md5 connection for the db user"
+      community.postgresql.postgresql_pg_hba:
+        dest: "/etc/postgresql/14/main/pg_hba.conf"
+        contype: host
+        databases: all
+        users: all
+        method: md5
+        source: all
+        create: true
+      become: yes
+      become_user: postgres
+      notify: restart postgres
+
+    - name: Stop service Postgresql, if started
+      ansible.builtin.service:
+        name: postgresql
+        state: started
+
+    - name: "Create app database"
+      postgresql_db:
+        state: present
+        name: "{{ db_name }}"
+      become: yes
+      become_user: postgres
+
+    - name: "Create db user"
+      postgresql_user:
+        state: present
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+      become: yes
+      become_user: postgres
+
+    - name: "Grant db user access to app db"
+      postgresql_privs:
+        type: database
+        database: "{{ db_name }}"
+        roles: "{{ db_user }}"
+        grant_option: no
+        privs: all
+      become: yes
+      become_user: postgres
+
+  handlers:
+    - name: restart postgres
+      service: name=postgresql state=restarted

@@ -1,0 +1,14 @@
+- hosts: db_master
+  vars:
+    pgbouncer_database_aliases:
+      - name: mydb
+        host: 127.0.0.1
+        pool_size: 50
+        user: my_app
+    pgbouncer_auth_users:
+      - name: app1user
+        pass: PASSWORD
+    pgbouncer_install_pg_client: False
+    pgbouncer_auth_type: md5
+  roles:
+     - { role: dylancwood.debian-pgbouncer}
